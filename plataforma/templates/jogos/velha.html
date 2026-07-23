@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block titulo %}Jogo da Velha — Arcade{% endblock %}
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/velha.css') }}">
+{% endblock %}
+{% block conteudo %}
+  <div class="velha-wrap" data-api="{{ url_for('jogos.velha_api_jogar') }}">
+    <header class="head">
+      <h1 class="wordmark">Jogo da Velha</h1>
+      <svg class="scribble" viewBox="0 0 250 20" aria-hidden="true">
+        <path d="M6 12 C 60 3, 118 19, 172 8 S 232 5, 244 13" pathLength="1"/>
+      </svg>
+      <p class="tag">As regras rodam no <b>Python</b>. Jogue a dois ou desafie a <b class="co">IA</b> imbatível.</p>
+    </header>
+
+    <div class="modes" role="tablist" aria-label="Modo de jogo">
+      <button class="mode" data-modo="2p" role="tab" aria-selected="true">2 Jogadores</button>
+      <button class="mode" data-modo="ia" role="tab" aria-selected="false">Contra a IA</button>
+    </div>
+
+    <section class="scores" aria-label="Placar">
+      <div class="tile" data-p="x"><span class="tval" id="sx">0</span><span class="tlab" id="lx">Vitórias X</span></div>
+      <div class="tile" data-p="draw"><span class="tval" id="sd">0</span><span class="tlab">Empates</span></div>
+      <div class="tile" data-p="o"><span class="tval" id="so">0</span><span class="tlab" id="lo">Vitórias O</span></div>
+    </section>
+
+    <div class="board" id="board" aria-label="Tabuleiro do jogo da velha">
+      <svg class="grid" viewBox="0 0 300 300" aria-hidden="true">
+        <path d="M100 12 C 97 90, 103 210, 100 288"/>
+        <path d="M200 12 C 203 90, 197 210, 200 288"/>
+        <path d="M12 100 C 90 97, 210 103, 288 100"/>
+        <path d="M12 200 C 90 203, 210 197, 288 200"/>
+      </svg>
+      <button class="cell" data-i="0" aria-label="Linha 1, coluna 1: vazio"></button>
+      <button class="cell" data-i="1" aria-label="Linha 1, coluna 2: vazio"></button>
+      <button class="cell" data-i="2" aria-label="Linha 1, coluna 3: vazio"></button>
+      <button class="cell" data-i="3" aria-label="Linha 2, coluna 1: vazio"></button>
+      <button class="cell" data-i="4" aria-label="Linha 2, coluna 2: vazio"></button>
+      <button class="cell" data-i="5" aria-label="Linha 2, coluna 3: vazio"></button>
+      <button class="cell" data-i="6" aria-label="Linha 3, coluna 1: vazio"></button>
+      <button class="cell" data-i="7" aria-label="Linha 3, coluna 2: vazio"></button>
+      <button class="cell" data-i="8" aria-label="Linha 3, coluna 3: vazio"></button>
+      <svg class="win-line" viewBox="0 0 300 300" aria-hidden="true">
+        <line x1="0" y1="0" x2="0" y2="0" pathLength="1"/>
+      </svg>
+    </div>
+
+    <p class="status" id="status" aria-live="polite">Vez do <b class="cx">X</b></p>
+
+    <div class="controls">
+      <button class="btn" id="reset">Novo jogo</button>
+      <button class="btn ghost-btn" id="resetAll">Zerar placar</button>
+    </div>
+
+    <p class="foot" id="foot">Modo 2 jogadores · X e O se alternam</p>
+  </div>
+  <script src="{{ url_for('static', filename='js/velha.js') }}"></script>
+{% endblock %}

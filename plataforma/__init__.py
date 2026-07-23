@@ -17,6 +17,9 @@ def create_app(config_class=Config):
     from .principal.rotas import bp as principal_bp
     app.register_blueprint(principal_bp)
 
+    from .jogos.rotas import bp as jogos_bp
+    app.register_blueprint(jogos_bp)
+
     with app.app_context():
         db.create_all()
 
