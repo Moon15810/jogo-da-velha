@@ -38,7 +38,11 @@ def login():
         if usuario and usuario.checar_senha(form.senha.data):
             login_user(usuario)
             flash(f"Olá de novo, {usuario.nome_usuario}!", "sucesso")
-            return redirect(request.args.get("next") or url_for("principal.home"))
+            proximo = request.args.get("next", "")
+            # Só aceita caminho local relativo (evita open redirect para domínio externo).
+            if not proximo.startswith("/") or proximo.startswith("//") or "\\" in proximo:
+                proximo = url_for("principal.home")
+            return redirect(proximo)
         flash("Usuário ou senha inválidos.", "erro")
     return render_template("auth/login.html", form=form)
 
