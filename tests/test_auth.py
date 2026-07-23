@@ -51,3 +51,9 @@ def test_login_aceita_e_rejeita(client):
         follow_redirects=True,
     )
     assert "inválidos".encode() in ruim.data
+
+
+def test_logout_exige_login(client):
+    # /logout é protegido por login_required: visitante deslogado é redirecionado.
+    resp = client.post("/logout")
+    assert resp.status_code == 302
