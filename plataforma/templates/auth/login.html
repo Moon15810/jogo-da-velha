@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block titulo %}Entrar — Arcade{% endblock %}
+{% block conteudo %}
+<section class="form-card">
+  <h1>Entrar</h1>
+  <form method="post" novalidate>
+    {{ form.csrf_token }}
+    <label>{{ form.nome_usuario.label.text }}{{ form.nome_usuario(class="campo") }}</label>
+    {% for e in form.nome_usuario.errors %}<span class="erro-campo">{{ e }}</span>{% endfor %}
+    <label>{{ form.senha.label.text }}{{ form.senha(class="campo") }}</label>
+    {% for e in form.senha.errors %}<span class="erro-campo">{{ e }}</span>{% endfor %}
+    {{ form.enviar(class="btn btn-bloco") }}
+  </form>
+  <p class="form-alt">Não tem conta? <a href="{{ url_for('auth.cadastro') }}">Cadastre-se</a></p>
+</section>
+{% endblock %}

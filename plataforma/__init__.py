@@ -20,6 +20,9 @@ def create_app(config_class=Config):
     from .jogos.rotas import bp as jogos_bp
     app.register_blueprint(jogos_bp)
 
+    from .auth.rotas import bp as auth_bp
+    app.register_blueprint(auth_bp)
+
     with app.app_context():
         db.create_all()
 
