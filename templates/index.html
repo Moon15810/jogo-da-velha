@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jogo da Velha — com IA</title>
+<style>
+  :root{
+    /* --- tema claro (padrão) --- */
+    --paper:#E9EEF3;   --panel:#F4F7FA;  --grid:#C8D6E2;
+    --ink:#26374A;     --muted:#617689;  --x:#3B5BD9;  --o:#D8455B;  --hash:#2E4257;
+    --edge:rgba(38,55,74,.10);           --cell-hover:rgba(38,55,74,.05);
+    --shadow-sm:0 10px 26px -16px rgba(24,44,72,.55);
+    --shadow-btn:0 10px 22px -10px rgba(24,44,72,.45);
+    --win-bg:radial-gradient(circle, rgba(255,193,79,.26), transparent 68%);
+    --fs-display:clamp(2.3rem,8vw,3.5rem);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#111925; --panel:#182231; --grid:#26344A; --ink:#E6ECF4; --muted:#8598AC;
+      --x:#7F9BF7; --o:#FF7F91; --hash:#4A6076;
+      --edge:rgba(255,255,255,.07); --cell-hover:rgba(255,255,255,.055);
+      --shadow-sm:0 12px 30px -18px rgba(0,0,0,.75);
+      --shadow-btn:0 12px 26px -12px rgba(0,0,0,.7);
+      --win-bg:radial-gradient(circle, rgba(255,193,79,.17), transparent 68%);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#111925; --panel:#182231; --grid:#26344A; --ink:#E6ECF4; --muted:#8598AC;
+    --x:#7F9BF7; --o:#FF7F91; --hash:#4A6076;
+    --edge:rgba(255,255,255,.07); --cell-hover:rgba(255,255,255,.055);
+    --shadow-sm:0 12px 30px -18px rgba(0,0,0,.75);
+    --shadow-btn:0 12px 26px -12px rgba(0,0,0,.7);
+    --win-bg:radial-gradient(circle, rgba(255,193,79,.17), transparent 68%);
+  }
+  :root[data-theme="light"]{
+    --paper:#E9EEF3; --panel:#F4F7FA; --grid:#C8D6E2; --ink:#26374A; --muted:#617689;
+    --x:#3B5BD9; --o:#D8455B; --hash:#2E4257;
+    --edge:rgba(38,55,74,.10); --cell-hover:rgba(38,55,74,.05);
+    --shadow-sm:0 10px 26px -16px rgba(24,44,72,.55);
+    --shadow-btn:0 10px 22px -10px rgba(24,44,72,.45);
+    --win-bg:radial-gradient(circle, rgba(255,193,79,.26), transparent 68%);
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+
+  .page{
+    min-height:100vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:clamp(14px,3vw,22px);
+    padding:34px 18px 42px;
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 26px 26px,
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 26px 26px,
+      var(--paper);
+    background-attachment:fixed;
+  }
+
+  /* ---------- cabeçalho ---------- */
+  .head{ display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center; }
+  .wordmark{
+    margin:0; font-size:var(--fs-display); line-height:1;
+    font-family:"Iowan Old Style","Palatino Linotype","Palatino","Book Antiqua",Georgia,serif;
+    font-weight:700; letter-spacing:-.015em; text-wrap:balance;
+  }
+  .scribble{ width:min(62%,250px); height:16px; overflow:visible; margin-top:2px; }
+  .scribble path{
+    fill:none; stroke:var(--o); stroke-width:4; stroke-linecap:round;
+    stroke-dasharray:1; stroke-dashoffset:1; animation:draw .7s ease .25s forwards;
+  }
+  .tag{ margin:8px 0 0; color:var(--muted); font-size:.98rem; max-width:34ch; text-wrap:balance; }
+  .cx{ color:var(--x); font-weight:800; } .co{ color:var(--o); font-weight:800; }
+
+  /* ---------- seletor de modo ---------- */
+  .modes{
+    display:inline-flex; gap:4px; padding:4px;
+    background:var(--panel); border:1px solid var(--edge); border-radius:999px; box-shadow:var(--shadow-sm);
+  }
+  .mode{
+    font:inherit; font-weight:600; font-size:.9rem; cursor:pointer; border:0; background:transparent;
+    color:var(--muted); padding:8px 16px; border-radius:999px; transition:background .2s ease, color .2s ease;
+  }
+  .mode[aria-selected="true"]{ background:var(--ink); color:var(--paper); }
+  .mode:focus-visible{ outline:3px solid var(--o); outline-offset:2px; }
+
+  /* ---------- placar ---------- */
+  .scores{ display:flex; gap:12px; }
+  .tile{
+    background:var(--panel); border:1px solid var(--edge); border-radius:15px;
+    padding:12px 20px; min-width:88px; text-align:center; box-shadow:var(--shadow-sm);
+  }
+  .tval{ display:block; font-size:1.75rem; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; }
+  .tile[data-p="x"] .tval{ color:var(--x); }
+  .tile[data-p="o"] .tval{ color:var(--o); }
+  .tlab{ display:block; margin-top:7px; font-size:.68rem; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); }
+
+  /* ---------- tabuleiro ---------- */
+  .board{
+    position:relative; width:min(84vw,400px); aspect-ratio:1;
+    display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
+  }
+  .grid, .win-line{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+  .grid{ z-index:0; }
+  .grid path{ fill:none; stroke:var(--hash); stroke-width:5; stroke-linecap:round; opacity:.92; }
+
+  .cell{
+    position:relative; z-index:1; appearance:none; border:0; margin:0; padding:0;
+    background:transparent; cursor:pointer; display:grid; place-items:center; border-radius:14px;
+    transition:background .15s ease;
+  }
+  .cell:not(:disabled):hover{ background:var(--cell-hover); }
+  .cell:focus-visible{ outline:3px solid var(--ink); outline-offset:-8px; }
+  .cell.win{ background:var(--win-bg); }
+
+  .mark{ width:60%; height:60%; overflow:visible; }
+  .mark path, .mark circle{ fill:none; stroke-width:9; stroke-linecap:round; stroke-linejoin:round; }
+  .mark.x path{ stroke:var(--x); }
+  .mark.o circle{ stroke:var(--o); }
+  .mark path, .mark circle{ stroke-dasharray:1; stroke-dashoffset:1; animation:draw .34s ease forwards; }
+  .mark .s2{ animation-delay:.16s; }
+  .mark.ghost path, .mark.ghost circle{ animation:none; stroke-dashoffset:0; opacity:.26; }
+
+  .win-line{ z-index:4; opacity:0; }
+  .win-line.show{ opacity:1; }
+  .win-line line{ stroke:var(--wl,var(--ink)); stroke-width:10; stroke-linecap:round; stroke-dasharray:1; stroke-dashoffset:1; }
+  .win-line.show line{ animation:draw .45s ease .12s forwards; }
+
+  @keyframes draw{ to{ stroke-dashoffset:0; } }
+
+  /* ---------- status + botões ---------- */
+  .status{ margin:0; font-size:1.18rem; min-height:1.5em; text-align:center; }
+  .controls{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  .btn{
+    font:inherit; font-weight:600; cursor:pointer; padding:11px 22px; border-radius:999px;
+    border:1.5px solid var(--ink); background:var(--ink); color:var(--paper);
+    transition:transform .12s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
+  }
+  .btn:hover{ transform:translateY(-1px); box-shadow:var(--shadow-btn); }
+  .btn:active{ transform:translateY(0); }
+  .btn.ghost-btn{ background:transparent; color:var(--ink); }
+  .btn.ghost-btn:hover{ background:var(--cell-hover); box-shadow:none; }
+  .btn:focus-visible{ outline:3px solid var(--o); outline-offset:2px; }
+
+  .foot{ color:var(--muted); font-size:.8rem; text-align:center; }
+
+  @media (prefers-reduced-motion: reduce){
+    .mark path, .mark circle, .win-line.show line, .scribble path{ animation:none; stroke-dashoffset:0; }
+    .btn, .cell, .mode{ transition:none; }
+  }
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="head">
+    <h1 class="wordmark">Jogo da Velha</h1>
+    <svg class="scribble" viewBox="0 0 250 20" aria-hidden="true">
+      <path d="M6 12 C 60 3, 118 19, 172 8 S 232 5, 244 13" pathLength="1"/>
+    </svg>
+    <p class="tag">As regras rodam no <b>Python</b>. Jogue a dois ou desafie a <b class="co">IA</b> imbatível.</p>
+  </header>
+
+  <div class="modes" role="tablist" aria-label="Modo de jogo">
+    <button class="mode" data-modo="2p" role="tab" aria-selected="true">2 Jogadores</button>
+    <button class="mode" data-modo="ia" role="tab" aria-selected="false">Contra a IA</button>
+  </div>
+
+  <section class="scores" aria-label="Placar">
+    <div class="tile" data-p="x"><span class="tval" id="sx">0</span><span class="tlab" id="lx">Vitórias X</span></div>
+    <div class="tile" data-p="draw"><span class="tval" id="sd">0</span><span class="tlab">Empates</span></div>
+    <div class="tile" data-p="o"><span class="tval" id="so">0</span><span class="tlab" id="lo">Vitórias O</span></div>
+  </section>
+
+  <div class="board" id="board" aria-label="Tabuleiro do jogo da velha">
+    <svg class="grid" viewBox="0 0 300 300" aria-hidden="true">
+      <path d="M100 12 C 97 90, 103 210, 100 288"/>
+      <path d="M200 12 C 203 90, 197 210, 200 288"/>
+      <path d="M12 100 C 90 97, 210 103, 288 100"/>
+      <path d="M12 200 C 90 203, 210 197, 288 200"/>
+    </svg>
+    <button class="cell" data-i="0" aria-label="Linha 1, coluna 1: vazio"></button>
+    <button class="cell" data-i="1" aria-label="Linha 1, coluna 2: vazio"></button>
+    <button class="cell" data-i="2" aria-label="Linha 1, coluna 3: vazio"></button>
+    <button class="cell" data-i="3" aria-label="Linha 2, coluna 1: vazio"></button>
+    <button class="cell" data-i="4" aria-label="Linha 2, coluna 2: vazio"></button>
+    <button class="cell" data-i="5" aria-label="Linha 2, coluna 3: vazio"></button>
+    <button class="cell" data-i="6" aria-label="Linha 3, coluna 1: vazio"></button>
+    <button class="cell" data-i="7" aria-label="Linha 3, coluna 2: vazio"></button>
+    <button class="cell" data-i="8" aria-label="Linha 3, coluna 3: vazio"></button>
+    <svg class="win-line" viewBox="0 0 300 300" aria-hidden="true">
+      <line x1="0" y1="0" x2="0" y2="0" pathLength="1"/>
+    </svg>
+  </div>
+
+  <p class="status" id="status" aria-live="polite">Vez do <b class="cx">X</b></p>
+
+  <div class="controls">
+    <button class="btn" id="reset">Novo jogo</button>
+    <button class="btn ghost-btn" id="resetAll">Zerar placar</button>
+  </div>
+
+  <p class="foot" id="foot">Modo 2 jogadores · X e O se alternam</p>
+</main>
+
+<script>
+  const NS = "http://www.w3.org/2000/svg";
+
+  const board   = document.getElementById("board");
+  const cells   = [...board.querySelectorAll(".cell")];
+  const winLine = board.querySelector(".win-line");
+  const winSeg  = winLine.querySelector("line");
+  const statusEl= document.getElementById("status");
+  const footEl  = document.getElementById("foot");
+  const els = { X: document.getElementById("sx"), O: document.getElementById("so"), draws: document.getElementById("sd") };
+
+  const scores = { X:0, O:0, draws:0 };
+  let state, current, over, busy, modo = "2p";
+
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+
+  // Cria o SVG da marca (X ou O), desenhado com traço animado.
+  function markSVG(player){
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 100 100");
+    svg.classList.add("mark", player.toLowerCase());
+    if (player === "X"){
+      const p1 = document.createElementNS(NS, "path");
+      p1.setAttribute("d", "M28 28 L72 72"); p1.setAttribute("pathLength", "1");
+      const p2 = document.createElementNS(NS, "path");
+      p2.setAttribute("d", "M72 28 L28 72"); p2.setAttribute("pathLength", "1"); p2.classList.add("s2");
+      svg.append(p1, p2);
+    } else {
+      const c = document.createElementNS(NS, "circle");
+      c.setAttribute("cx","50"); c.setAttribute("cy","50"); c.setAttribute("r","24");
+      c.setAttribute("pathLength","1"); c.setAttribute("transform","rotate(-90 50 50)");
+      svg.append(c);
+    }
+    return svg;
+  }
+
+  function renderMark(cell, sym, ghost=false){
+    const m = markSVG(sym);
+    if (ghost) m.classList.add("ghost");
+    cell.appendChild(m);
+  }
+
+  const label = (i, val) => {
+    const r = Math.floor(i/3)+1, c = i%3+1;
+    return `Linha ${r}, coluna ${c}: ${val ? "marcado com "+val : "vazio"}`;
+  };
+  const plHTML = p => `<b class="${p==="X" ? "cx":"co"}">${p}</b>`;
+  const boardToList = () => state.map(v => v || "");
+
+  function updateTurn(){
+    if (modo === "ia") statusEl.innerHTML = `Sua vez  ${plHTML("X")}`;
+    else statusEl.innerHTML = `Vez do ${plHTML(current)}`;
+  }
+
+  function newGame(){
+    state = Array(9).fill(null);
+    current = "X"; over = false; busy = false;
+    cells.forEach((c,i) => {
+      c.innerHTML = ""; c.classList.remove("win"); c.disabled = false;
+      c.setAttribute("aria-label", label(i, null));
+    });
+    winLine.classList.remove("show");
+    updateTurn();
+  }
+
+  function drawWinLine(combo, p){
+    const a = combo[0], c = combo[2];
+    const ax = (a%3)*100+50, ay = Math.floor(a/3)*100+50;
+    const cx = (c%3)*100+50, cy = Math.floor(c/3)*100+50;
+    const dx = cx-ax, dy = cy-ay, len = Math.hypot(dx,dy) || 1;
+    const ux = dx/len, uy = dy/len, ext = 40;
+    winSeg.setAttribute("x1", ax-ux*ext); winSeg.setAttribute("y1", ay-uy*ext);
+    winSeg.setAttribute("x2", cx+ux*ext); winSeg.setAttribute("y2", cy+uy*ext);
+    winLine.style.setProperty("--wl", p==="X" ? "var(--x)" : "var(--o)");
+    winLine.classList.remove("show"); void winLine.offsetWidth; winLine.classList.add("show");
+  }
+
+  function aplicarResultado(data, humano){
+    if (data.status === "vitoria"){
+      over = true;
+      data.combo.forEach(k => cells[k].classList.add("win"));
+      drawWinLine(data.combo, data.vencedor);
+      scores[data.vencedor]++; els[data.vencedor].textContent = scores[data.vencedor];
+      if (modo === "ia"){
+        statusEl.innerHTML = (data.vencedor === humano) ? "Você venceu! 🎉" : "A IA venceu! 🤖";
+      } else {
+        statusEl.innerHTML = `${plHTML(data.vencedor)} venceu! 🎉`;
+      }
+      cells.forEach(c => c.disabled = true);
+    } else if (data.status === "empate"){
+      over = true;
+      scores.draws++; els.draws.textContent = scores.draws;
+      statusEl.textContent = "Deu velha! Empate.";
+      cells.forEach(c => c.disabled = true);
+    } else {
+      current = data.proximo;
+      updateTurn();
+    }
+  }
+
+  async function play(i){
+    if (over || state[i] || busy) return;
+    busy = true;
+
+    const humano = current;
+    const antes = boardToList();          // tabuleiro ANTES da jogada (para o Python)
+
+    // Marca do humano na hora (feedback imediato).
+    cells[i].innerHTML = "";              // remove eventual "fantasma"
+    renderMark(cells[i], humano);
+    state[i] = humano;
+    cells[i].disabled = true;
+    cells[i].setAttribute("aria-label", label(i, humano));
+
+    let data;
+    try{
+      const res = await fetch("/api/jogar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tabuleiro: antes, posicao: i, jogador: humano, modo })
+      });
+      data = await res.json();
+    } catch (e){
+      // servidor fora do ar -> desfaz a jogada e avisa
+      cells[i].innerHTML = ""; state[i] = null; cells[i].disabled = false;
+      cells[i].setAttribute("aria-label", label(i, null));
+      statusEl.textContent = "Não consegui falar com o servidor Python. Ele está rodando?";
+      busy = false; return;
+    }
+
+    if (!data.ok){
+      cells[i].innerHTML = ""; state[i] = null; cells[i].disabled = false;
+      cells[i].setAttribute("aria-label", label(i, null));
+      statusEl.textContent = data.erro;
+      busy = false; return;
+    }
+
+    // Jogada da IA (quando houver), com uma pausa curta para dar ritmo.
+    if (data.jogada_ia !== null && data.jogada_ia !== undefined){
+      statusEl.textContent = "A IA está pensando…";
+      await delay(300);
+      const ia = humano === "X" ? "O" : "X";
+      renderMark(cells[data.jogada_ia], ia);
+      state[data.jogada_ia] = ia;
+      cells[data.jogada_ia].disabled = true;
+      cells[data.jogada_ia].setAttribute("aria-label", label(data.jogada_ia, ia));
+    }
+
+    aplicarResultado(data, humano);
+    busy = false;
+  }
+
+  // Preview "fantasma" da marca ao passar o mouse numa casa vazia.
+  cells.forEach(cell => {
+    const i = +cell.dataset.i;
+    cell.addEventListener("click", () => play(i));
+    cell.addEventListener("pointerenter", () => {
+      if (over || state[i] || busy) return;
+      renderMark(cell, current, true);
+    });
+    cell.addEventListener("pointerleave", () => {
+      if (state[i]) return;
+      const g = cell.querySelector(".ghost"); if (g) g.remove();
+    });
+  });
+
+  // Alternância entre 2 jogadores e IA.
+  document.querySelectorAll(".mode").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (busy) return;
+      modo = btn.dataset.modo;
+      document.querySelectorAll(".mode").forEach(b => b.setAttribute("aria-selected", b === btn ? "true" : "false"));
+      // Rótulos do placar mudam conforme o modo.
+      if (modo === "ia"){
+        document.getElementById("lx").textContent = "Você (X)";
+        document.getElementById("lo").textContent = "IA (O)";
+        footEl.textContent = "Modo contra a IA · você é o X e começa";
+      } else {
+        document.getElementById("lx").textContent = "Vitórias X";
+        document.getElementById("lo").textContent = "Vitórias O";
+        footEl.textContent = "Modo 2 jogadores · X e O se alternam";
+      }
+      newGame();
+    });
+  });
+
+  document.getElementById("reset").addEventListener("click", () => { if (!busy) newGame(); });
+  document.getElementById("resetAll").addEventListener("click", () => {
+    if (busy) return;
+    scores.X = scores.O = scores.draws = 0;
+    els.X.textContent = els.O.textContent = els.draws.textContent = "0";
+    newGame();
+  });
+
+  newGame();
+</script>
+</body>
+</html>
