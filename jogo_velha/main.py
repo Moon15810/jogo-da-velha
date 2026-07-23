@@ -3,7 +3,7 @@
 #     python main.py
 # A responsabilidade dele é mínima: apenas "ligar o motor" do jogo.
 
-from jogo import iniciar_jogo
+from .jogo import iniciar_jogo
 
 # Esta condição garante que o jogo só rode quando executamos ESTE arquivo
 # diretamente — e não quando ele for importado por outro módulo.

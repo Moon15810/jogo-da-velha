@@ -3,7 +3,7 @@
 # (tabuleiro, jogadores e utilitários) e decide quando o jogo termina.
 
 # Importamos apenas as funções que precisamos de cada módulo.
-from tabuleiro import (
+from .tabuleiro import (
     criar_tabuleiro,
     mostrar_tabuleiro,
     validar_jogada,
@@ -11,8 +11,8 @@ from tabuleiro import (
     verificar_vitoria,
     verificar_empate,
 )
-from jogador import criar_jogador, trocar_jogador
-from utils import limpar_tela, ler_inteiro
+from .jogador import criar_jogador, trocar_jogador
+from .utils import limpar_tela, ler_inteiro
 
 
 def jogar_partida(jogador_x, jogador_o):

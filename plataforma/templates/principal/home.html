@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block titulo %}Arcade — jogos no navegador{% endblock %}
+{% block conteudo %}
+  <section class="hero">
+    <h1 class="hero-titulo">Arcade</h1>
+    <p class="hero-sub">Jogos clássicos no navegador. Jogue já — crie uma conta para competir depois.</p>
+  </section>
+  <section class="galeria">
+    {% for jogo in jogos %}
+      <a class="card" href="{{ url_for(jogo.endpoint) }}">
+        <span class="card-nome">{{ jogo.nome }}</span>
+        <span class="card-desc">{{ jogo.descricao }}</span>
+        <span class="card-cta">Jogar →</span>
+      </a>
+    {% endfor %}
+  </section>
+{% endblock %}

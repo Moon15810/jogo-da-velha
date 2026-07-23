@@ -11,7 +11,7 @@
 # onde cada posição é "X", "O" ou "" (vazia). Aqui convertemos para a
 # MATRIZ 3x3 usada pelo restante do projeto e vice-versa.
 
-from tabuleiro import (
+from .tabuleiro import (
     validar_jogada,
     realizar_jogada,
     verificar_vitoria,
@@ -19,7 +19,7 @@ from tabuleiro import (
     combo_vencedor,
     CASA_VAZIA,
 )
-from ia import melhor_jogada
+from .ia import melhor_jogada
 
 
 def para_matriz(lista):
