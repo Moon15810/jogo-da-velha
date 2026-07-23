@@ -10,7 +10,7 @@
 #   Como o Jogo da Velha é pequeno, dá para explorar todas as possibilidades
 #   e a IA nunca perde: no máximo empata.
 
-from tabuleiro import verificar_vitoria, verificar_empate, CASA_VAZIA
+from .tabuleiro import verificar_vitoria, verificar_empate, CASA_VAZIA
 
 
 def _casas_vazias(tabuleiro):
