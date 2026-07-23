@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Arcade{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tema.css') }}">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <header class="cabecalho">
+    <a class="logo" href="{{ url_for('principal.home') }}">Arcade</a>
+    <nav class="nav">
+      {% if current_user.is_authenticated %}
+        <span class="nav-usuario">Olá, <b>{{ current_user.nome_usuario }}</b></span>
+        <form action="{{ url_for('auth.logout') }}" method="post" class="nav-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-ghost" type="submit">Sair</button>
+        </form>
+      {% else %}
+        <a class="btn btn-ghost" href="{{ url_for('auth.login') }}">Entrar</a>
+        <a class="btn" href="{{ url_for('auth.cadastro') }}">Cadastrar</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  {% with mensagens = get_flashed_messages(with_categories=true) %}
+    {% if mensagens %}
+      <div class="flashes">
+        {% for categoria, msg in mensagens %}
+          <div class="flash flash-{{ categoria }}">{{ msg }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main class="conteudo">
+    {% block conteudo %}{% endblock %}
+  </main>
+</body>
+</html>
