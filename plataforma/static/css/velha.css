@@ -13,6 +13,12 @@
 .tag{ margin:8px 0 0; color:var(--muted); font-size:.98rem; max-width:34ch; text-wrap:balance; }
 .cx{ color:var(--x); font-weight:800; } .co{ color:var(--o); font-weight:800; }
 
+/* ---------- container principal ---------- */
+.velha-wrap{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:clamp(14px,3vw,22px); padding:34px 18px 42px;
+}
+
 /* ---------- seletor de modo ---------- */
 .modes{
   display:inline-flex; gap:4px; padding:4px;
